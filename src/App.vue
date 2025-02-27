@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen w-screen flex flex-col">
     <header class="flex w-full justify-end">
-      <Button variant="outline" class="m-2" size="icon" :onclick="() => toggleDark()">
+      <Button variant="outline" class="m-2" size="icon" @click="toggleDark()">
         <Icon icon="solar:moon-linear" class="hidden dark:block"></Icon>
         <Icon icon="material-symbols:sunny-outline-rounded" class="dark:hidden"></Icon>
       </Button>
@@ -44,3 +44,9 @@ import Button from './components/ui/button/Button.vue'
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 </script>
+
+<style>
+html.dark {
+  color-scheme: dark;
+}
+</style>
