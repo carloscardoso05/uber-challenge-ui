@@ -1,9 +1,10 @@
 <template>
+  <Toaster />
   <div class="h-screen w-screen flex flex-col">
     <header class="flex w-full justify-end">
       <Button variant="outline" class="m-2" size="icon" @click="toggleDark()">
-        <Icon icon="solar:moon-linear" class="hidden dark:block"></Icon>
-        <Icon icon="material-symbols:sunny-outline-rounded" class="dark:hidden"></Icon>
+        <Icon icon="solar:moon-linear" class="hidden dark:block" />
+        <Icon icon="material-symbols:sunny-outline-rounded" class="dark:hidden" />
       </Button>
     </header>
     <Card class="max-w-xl m-auto">
@@ -15,18 +16,24 @@
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div>
-          <Label for="email-input">Receiver email</Label>
-          <Input type="email" id="email-input" placeholder="example@domain.com" />
-        </div>
-        <div>
-          <Label for="subject-input">Subject</Label>
-          <Input type="text" id="subject-input" placeholder="Enter email subject" />
-        </div>
-        <div>
-          <Label for="message-input">Message</Label>
-          <Textarea id="message-input" placeholder="Type your message here..." />
-        </div>
+        <AutoForm
+          :schema="emailSchema"
+          :form="form"
+          @submit="sendEmail"
+          :field-config="{
+            body: {
+              component: 'textarea',
+            },
+          }"
+        >
+          <div class="flex justify-end">
+            <Button type="submit" class="mt-6 bg-primary" :disabled="isInvalid || isFetching">
+              Send email
+              <Icon v-if="isFetching" icon="line-md:loading-loop" />
+              <Icon v-else icon="fluent:send-20-filled" />
+            </Button>
+          </div>
+        </AutoForm>
       </CardContent>
     </Card>
   </div>
@@ -34,15 +41,46 @@
 
 <script setup lang="ts">
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Icon } from '@iconify/vue'
-import { useDark, useToggle } from '@vueuse/core'
+import { useDark, useFetch, useToggle } from '@vueuse/core'
+import { useForm } from 'vee-validate'
+import AutoForm from './components/ui/auto-form/AutoForm.vue'
 import Button from './components/ui/button/Button.vue'
+import { emailSchema } from './models/email.model'
+import { toTypedSchema } from '@vee-validate/zod'
+import { computed } from 'vue'
+import Toaster from './components/ui/toast/Toaster.vue'
+import { toast } from './components/ui/toast'
+
+const url = '/api/send/'
 
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
+
+const { post, isFetching } = useFetch(url, { immediate: false })
+
+const form = useForm({
+  validationSchema: toTypedSchema(emailSchema),
+})
+
+const isInvalid = computed(() => {
+  try {
+    emailSchema.parse(form.values)
+    return false
+  } catch {
+    return true
+  }
+})
+
+async function sendEmail() {
+  toast({ title: 'Sending email' })
+  try {
+    await post(form.values).execute(true)
+    toast({ title: 'Email sent successfully', class: 'bg-green-700' })
+  } catch {
+    toast({ title: 'Failed to send email', variant: 'destructive' })
+  }
+}
 </script>
 
 <style>
